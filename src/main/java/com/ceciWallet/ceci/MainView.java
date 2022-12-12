@@ -822,14 +822,11 @@ class homePagePanel extends JPanel {
         panelUP_account.setBackground(new Color(249, 247, 225));
 
         panelDown_account.add(gotoDetailedPage);
-//        panelDown_account.add(addAccountBook);
-//        panelDown_account.add(deleteAccountBook);
 
         panelUP_account.add(radioButton6);
         panelUP_account.add(radioButton7);
         panelUP_account.add(radioButton8);
 
-//        panelDown_account.add(renameAccountBook);
         panelDown_account.setOpaque(true);
         panelDown_account.setBackground(new Color(249, 247, 225));
 
@@ -1043,6 +1040,63 @@ class homePagePanel extends JPanel {
 
 class accountPanel extends JPanel {
     private JPanel contentPane;
+    private JTable jTable1;
+    public JTable createTable(String year, String month, String InOrOt) throws SQLException {
+        Statement st = UserLogin.getConnection().createStatement();
+        String query;
+        if (InOrOt.equals("Expenses")) {
+            if (year.equals("All") && month.equals("All")) {
+                query = "SELECT * from AccountBook1 WHERE InOrOut = 0";
+            } else if (year.equals("All") && !month.equals("All")) {
+                query = "SELECT * from AccountBook1 WHERE Month = " + Integer.parseInt(month) + " AND InOrOut = 0";
+            } else if (!year.equals("All") && month.equals("All")) {
+                query = "SELECT * from AccountBook1 WHERE Year = " + Integer.parseInt(year) + " AND InOrOut = 0";
+            } else {
+                query = "SELECT * from AccountBook1 WHERE Year = " + Integer.parseInt(year) + " AND Month = " + Integer.parseInt(month) + " AND InOrOut = 0";
+            }
+        } else {
+            if (year.equals("All") && month.equals("All")) {
+                query = "SELECT * from AccountBook1 WHERE InOrOut = 1";
+            } else if (year.equals("All") && !month.equals("All")) {
+                query = "SELECT * from AccountBook1 WHERE Month = " + Integer.parseInt(month) + " AND InOrOut = 1";
+            } else if (!year.equals("All") && month.equals("All")) {
+                query = "SELECT * from AccountBook1 WHERE Year = " + Integer.parseInt(year) + " AND InOrOut = 1";
+            } else {
+                query = "SELECT * from AccountBook1 WHERE Year = " + Integer.parseInt(year) + " AND Month = " + Integer.parseInt(month) + " AND InOrOut = 1";
+            }        }
+        ResultSet rs = st.executeQuery(query);
+        int row = 0;
+        while(rs.next()) {
+            row++;
+        }
+        st.close();
+
+        Statement st1 = UserLogin.getConnection().createStatement();
+        ResultSet rs1 = st1.executeQuery(query);
+        ResultSetMetaData rsmd = rs1.getMetaData();
+        int column = rsmd.getColumnCount();
+
+        String[][] strings = new String[row][column-1];
+        int i = 0;
+        while(rs1.next()) {
+            for (int j = 1; j < column; j++) {
+                strings[i][j-1] = rs1.getString(j);
+            }
+            i++;
+        }
+        String[] header = {"Item", "Price", "Category", "Year", "Month"};
+        JTable jTable1 = new JTable(strings, header);
+        Font myFont1 = new Font("Britannic", Font.BOLD, 14);
+        jTable1.getTableHeader().setFont(myFont1);
+        jTable1.getTableHeader().setOpaque(false);
+        jTable1.getTableHeader().setBackground(new Color(242,237,189));
+        jTable1.getTableHeader().setForeground(new Color(171, 139, 189));
+        jTable1.setBounds(10, 200, 400, 300);
+        jTable1.setRowHeight(25);
+        jTable1.setRowHeight(0, 35);
+
+        return jTable1;
+    }
 
     public accountPanel(JPanel panel, MainView mv) throws SQLException { //  account book 1
         contentPane = panel;
@@ -1058,10 +1112,12 @@ class accountPanel extends JPanel {
         JPanel downPanel = new JPanel();
         downPanel.setOpaque(true);
         downPanel.setBackground(new Color(249, 247, 225));
+        downPanel.setPreferredSize(new Dimension(450, 300));
 
         JPanel bottomPanel = new JPanel();
         bottomPanel.setOpaque(true);
         bottomPanel.setBackground(new Color(249, 247, 225));
+        bottomPanel.setBorder(new TitledBorder("Control Center"));
 
 
         GridLayout grid = new GridLayout(3, 0); // name, amount, budget, chose date, choose in or out
@@ -1082,25 +1138,40 @@ class accountPanel extends JPanel {
         grid3.setBackground(new Color(249, 247, 225));
 
         Font myFont2 = new Font("Britannic", Font.BOLD, 20);
-        JLabel name = new JLabel("Account Book:");
-        JLabel name_ = new JLabel("Account Book 1");
+        JLabel name_ = new JLabel();
+        Statement stmt = UserLogin.getConnection().createStatement();
+        String SQL = "SELECT * FROM accountBookName";
+        ResultSet rs = stmt.executeQuery(SQL);
+        if(rs.next()){
+//            System.out.println(rs.getString("password"));
+            name_.setText(rs.getString("name"));
+        } else {
+            name_.setText("Your Account Book");
+        }
+        stmt.close();
+
+
+        name_.setForeground(new Color(171,139,189));
 
         grid1.setLayout(new BoxLayout(grid1, BoxLayout.X_AXIS));
-        grid1.add(name);
         grid1.add(name_);
         name_.setFont(myFont2);
 
-        grid2.setLayout(new GridLayout(1,2));
+        grid2.setLayout(new GridLayout(1,3));
         JPanel gridIn2_1 = new JPanel();
         JPanel gridIn2_2 = new JPanel();
+        JPanel gridIn2_3 = new JPanel();
 
         gridIn2_1.setOpaque(true);
         gridIn2_1.setBackground(new Color(249, 247, 225));
         gridIn2_2.setOpaque(true);
         gridIn2_2.setBackground(new Color(249, 247, 225));
+        gridIn2_3.setOpaque(true);
+        gridIn2_3.setBackground(new Color(249, 247, 225));
 
         grid2.add(gridIn2_1);
         grid2.add(gridIn2_2);
+        grid2.add(gridIn2_3);
 
         JLabel amount = new JLabel("Amount: ");
         JLabel amount_ = new JLabel("0");
@@ -1116,81 +1187,281 @@ class accountPanel extends JPanel {
         gridIn2_2.add(budget_);
 
 
-        grid3.setLayout(new GridLayout(1, 2));
+        grid3.setLayout(new GridLayout(1, 3));
         JPanel gridIn3_1 = new JPanel();
         JPanel gridIn3_2 = new JPanel();
+        JPanel gridIn3_3 = new JPanel();
         gridIn3_1.setOpaque(true);
         gridIn3_1.setBackground(new Color(249, 247, 225));
         gridIn3_2.setOpaque(true);
         gridIn3_2.setBackground(new Color(249, 247, 225));
+        gridIn3_3.setOpaque(true);
+        gridIn3_3.setBackground(new Color(249, 247, 225));
         gridIn3_1.setLayout(new BoxLayout(gridIn3_1, BoxLayout.X_AXIS));
         gridIn3_2.setLayout(new BoxLayout(gridIn3_2, BoxLayout.X_AXIS));
+        gridIn3_3.setLayout(new BoxLayout(gridIn3_3, BoxLayout.X_AXIS));
+
 
 
         grid3.add(gridIn3_1);
         grid3.add(gridIn3_2);
+        grid3.add(gridIn3_3);
 
-        String[] year = {"2022", "2023", "2024", "2025"};
-        String[] month = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"};
-        JLabel year_ = new JLabel("Choose Year:");
-        JLabel month_ = new JLabel("Choose Month:");
+        String[] year = {"All", "2022", "2023", "2024", "2025"};
+        String[] month = {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"};
+        String[] inOrOut = {"Expenses", "Income"};
+        JLabel year_ = new JLabel("Choose Year: ");
+        JLabel month_ = new JLabel("Choose Month: ");
+        JLabel inOrOut_ = new JLabel("Exp/Inc: ");
         JComboBox comboBox1 = new JComboBox(year);
         JComboBox comboBox2 = new JComboBox(month);
-        gridIn3_1.add(year_);
-        gridIn3_1.add(comboBox1);
-        gridIn3_2.add(month_);
-        gridIn3_2.add(comboBox2);
+        JComboBox comboBox3 = new JComboBox(inOrOut);
 
-
-
-        Statement st = UserLogin.getConnection().createStatement();
-        String query = "SELECT * from AccountBook1 WHERE InorOut = 0";
-        ResultSet rs = st.executeQuery(query);
-        int row = 0;
-        while(rs.next()) {
-            row++;
-        }
-        st.close();
-        System.out.println("row=" + row);
-
-        Statement st1 = UserLogin.getConnection().createStatement();
-        String query1 = "SELECT * from AccountBook1 WHERE InorOut = 0";
-        ResultSet rs1 = st1.executeQuery(query1);
-        ResultSetMetaData rsmd = rs1.getMetaData();
-        int column = rsmd.getColumnCount();
-        System.out.println("column=" + column);
-
-        String[][] strings = new String[row][column];
-        int i = 0;
-        while(rs1.next()) {
-            System.out.println("ffffffffff");
-            for (int j = 1; j <= column; j++) {
-                strings[i][j-1] = rs1.getString(j);
-                System.out.println(rs1.getString(j));
-            }
-            i++;
-        }
-        String[] header = {"Item", "Price", "Category", "Date", "Income/Expenditure"};
-        JTable jTable1 = new JTable(strings, header);
-        Font myFont1 = new Font("Britannic", Font.BOLD, 14);
-        jTable1.getTableHeader().setFont(myFont1);
-        jTable1.getTableHeader().setOpaque(false);
-        jTable1.getTableHeader().setBackground(new Color(242,237,189));
-        jTable1.getTableHeader().setForeground(new Color(125,69,5));
-        jTable1.setBounds(10, 200, 400, 300);
-        jTable1.setRowHeight(25);
-        jTable1.setRowHeight(0, 35);
-
-
-
-        JScrollPane scrollPane = new JScrollPane(jTable1);
-        scrollPane.setPreferredSize(new Dimension(450, 300));
+        gridIn3_2.add(year_);
+        gridIn3_2.add(comboBox1);
+        gridIn3_3.add(month_);
+        gridIn3_3.add(comboBox2);
+        gridIn3_1.add(inOrOut_);
+        gridIn3_1.add(comboBox3);
+        jTable1 = createTable((String) comboBox1.getSelectedItem(),(String) comboBox2.getSelectedItem(), (String) comboBox3.getSelectedItem());
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.getViewport().add(jTable1);
+        scrollPane.setPreferredSize(new Dimension(450, 200));
         downPanel.add(scrollPane);
 
-        this.setLayout(new BorderLayout());
-        this.add(upPanel, BorderLayout.NORTH);
-        this.add(downPanel, BorderLayout.CENTER);
-        this.add(bottomPanel, BorderLayout.SOUTH);
+        comboBox1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+//                System.out.println(comboBox1.getSelectedItem().getClass());
+//                System.out.println(comboBox1.getSelectedItem());
+                try {
+                    jTable1 = createTable((String) comboBox1.getSelectedItem(), (String) comboBox2.getSelectedItem(), (String) comboBox3.getSelectedItem());
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+//
+//                scrollPane.removeAll();
+//                scrollPane.revalidate();
+//                scrollPane.repaint();
+//                scrollPane.getViewport().add(jTable1);
+//                scrollPane.setPreferredSize(new Dimension(450, 200));
+            }
+        });
+
+        comboBox2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    jTable1 = createTable((String) comboBox1.getSelectedItem(), (String) comboBox2.getSelectedItem(), (String) comboBox3.getSelectedItem());
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+
+        comboBox3.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    jTable1 = createTable((String) comboBox1.getSelectedItem(), (String) comboBox2.getSelectedItem(), (String) comboBox3.getSelectedItem());
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+        JPanel rename_panel = new JPanel();
+        rename_panel.setOpaque(true);
+        rename_panel.setBackground(new Color(249, 247, 225));
+        rename_panel.setLayout(new BoxLayout(rename_panel, BoxLayout.X_AXIS));
+
+        JButton rename = new JButton("Rename account book");
+        rename_panel.add(rename);
+        JButton setBudget_button = new JButton("Set Budget");
+        rename_panel.add(setBudget_button);
+        JButton add_button = new JButton("Add Item");
+        rename_panel.add(add_button);
+        JButton clear_button = new JButton("Clear");
+        rename_panel.add(clear_button);
+        bottomPanel.add(rename_panel);
+
+        rename.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String name = JOptionPane.showInputDialog(null, "Input your new Account Book name:");
+                name_.setText(name);
+                Statement stmt = null;
+                try {
+                    stmt = UserLogin.getConnection().createStatement();
+                    String SQL1 = "DELETE FROM accountBookName WHERE name = " + name_.getText();
+                    stmt.executeQuery(SQL1);
+                    stmt.close();
+                    stmt = UserLogin.getConnection().createStatement();
+                    String SQL2 = "INSERT INTO accountBookName name VALUES" + name;
+                    stmt.executeQuery(SQL2);
+                    stmt.close();
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+
+        GridLayout grid_add = new GridLayout(1, 3);
+        JPanel addPanel = new JPanel();
+        addPanel.setOpaque(true);
+        addPanel.setBackground(new Color(249, 247, 225));
+        addPanel.setLayout(grid_add);
+
+        JPanel addPanel_1 = new JPanel();
+        addPanel_1.setBackground(new Color(249, 247, 225));
+        addPanel_1.setOpaque(true);
+        JPanel addPanel_2 = new JPanel();
+        addPanel_2.setBackground(new Color(249, 247, 225));
+        addPanel_2.setOpaque(true);
+        JPanel addPanel_3 = new JPanel();
+        addPanel_3.setBackground(new Color(249, 247, 225));
+        addPanel_3.setOpaque(true);
+
+        addPanel.add(addPanel_1);
+        addPanel.add(addPanel_2);
+        addPanel.add(addPanel_3);
+
+        JLabel itemName = new JLabel("Name: ");
+        JLabel itemPrice = new JLabel("Price: ");
+        JLabel itemDate = new JLabel("Date: ");
+        JTextField itemName_ = new JTextField();
+        itemName_.setPreferredSize(new Dimension(150, 25));
+        JTextField itemPrice_ = new JTextField();
+        itemPrice_.setPreferredSize(new Dimension(150, 25));
+        JTextField itemDate_ = new JTextField();
+        itemDate_.setPreferredSize(new Dimension(150, 25));
+
+        addPanel_1.add(itemName);
+        addPanel_1.add(itemName_);
+        addPanel_2.add(itemPrice);
+        addPanel_2.add(itemPrice_);
+        addPanel_3.add(itemDate);
+        addPanel_3.add(itemDate_);
+
+        bottomPanel.add(addPanel);
+        JPanel notePanel = new JPanel();
+        notePanel.setBackground(new Color(249, 247, 225));
+        notePanel.setOpaque(true);
+
+        JLabel note = new JLabel("NOTE: Please enter DATE as pattern: YYYY-MM-DD, for example, 2022-03-10");
+        note.setAlignmentX(Component.LEFT_ALIGNMENT);
+        notePanel.add(note);
+        bottomPanel.add(notePanel);
+
+
+        JPanel chooseInOrOur = new JPanel();
+        chooseInOrOur.setBackground(new Color(249, 247, 225));
+        chooseInOrOur.setOpaque(true);
+        chooseInOrOur.setLayout(new BoxLayout(chooseInOrOur, BoxLayout.X_AXIS));
+        Font myFont1 = new Font("Britannic", Font.BOLD, 13);
+        JLabel inOrOur_label = new JLabel("Chooses Expenses or Income: ");
+        inOrOur_label.setFont(myFont1);
+        JRadioButton expenses_button = new JRadioButton("Expenses");
+        JRadioButton income_button = new JRadioButton("Income");
+        chooseInOrOur.add(inOrOur_label);
+        chooseInOrOur.add(expenses_button);
+        chooseInOrOur.add(income_button);
+
+        bottomPanel.add(chooseInOrOur);
+
+        JPanel chooseCategory1 = new JPanel();
+        ButtonGroup group = new ButtonGroup();
+        chooseCategory1.setLayout(new BoxLayout(chooseCategory1, BoxLayout.X_AXIS));
+        chooseCategory1.setBackground(new Color(249, 247, 225));
+        chooseCategory1.setOpaque(true);
+        JRadioButton clothes_button = new JRadioButton("Clothes");
+        JRadioButton travel_button = new JRadioButton("Travel");
+        JRadioButton entertainment_button = new JRadioButton("Entertainment");
+        JRadioButton groceries_button = new JRadioButton("Groceries");
+        JRadioButton snacks_button = new JRadioButton("Snacks");
+        JRadioButton fuel_button = new JRadioButton("Fuel");
+        JRadioButton insurance_button = new JRadioButton("Insurance");
+        JRadioButton restaurantCafe_button = new JRadioButton("Restaurant & Cafes");
+        JRadioButton utilities_button = new JRadioButton("Utilities Bills");
+        JRadioButton healthy_button = new JRadioButton("Healthy");
+        JRadioButton sports_button = new JRadioButton("Sports");
+        JRadioButton academics_button = new JRadioButton("Academics");
+        JRadioButton others = new JRadioButton("Others");
+        JRadioButton pet_button = new JRadioButton("Pet");
+        JRadioButton life_button = new JRadioButton("Life");
+
+
+        JLabel chooseCategory_label = new JLabel("Choose Category: ");
+        chooseCategory_label.setFont(myFont1);
+        chooseCategory1.add(chooseCategory_label);
+        chooseCategory1.add(groceries_button);
+        chooseCategory1.add(snacks_button);
+        chooseCategory1.add(restaurantCafe_button);
+        chooseCategory1.add(utilities_button);
+
+
+        JPanel chooseCategory2 = new JPanel();
+
+        chooseCategory2.setLayout(new BoxLayout(chooseCategory2, BoxLayout.X_AXIS));
+        chooseCategory2.setBackground(new Color(249, 247, 225));
+        chooseCategory2.setOpaque(true);
+
+        chooseCategory2.add(fuel_button);
+        chooseCategory2.add(entertainment_button);
+        chooseCategory2.add(travel_button);
+        chooseCategory2.add(clothes_button);
+        chooseCategory2.add(insurance_button);
+        chooseCategory2.add(healthy_button);
+
+        JPanel chooseCategory3 = new JPanel();
+
+        chooseCategory3.setLayout(new BoxLayout(chooseCategory3, BoxLayout.X_AXIS));
+        chooseCategory3.setBackground(new Color(249, 247, 225));
+        chooseCategory3.setOpaque(true);
+
+
+        chooseCategory3.add(pet_button);
+        chooseCategory3.add(life_button);
+        chooseCategory3.add(academics_button);
+        chooseCategory3.add(sports_button);
+        chooseCategory3.add(others);
+
+        group.add(groceries_button);
+        group.add(snacks_button);
+        group.add(restaurantCafe_button);
+        group.add(utilities_button);
+        group.add(fuel_button);
+        group.add(entertainment_button);
+        group.add(travel_button);
+        group.add(clothes_button);
+        group.add(insurance_button);
+        group.add(healthy_button);
+        group.add(academics_button);
+        group.add(sports_button);
+        group.add(others);
+        group.add(pet_button);
+        group.add(life_button);
+
+        bottomPanel.add(chooseCategory1);
+        bottomPanel.add(chooseCategory2);
+        bottomPanel.add(chooseCategory3);
+
+        add(bottomPanel);
+        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        this.add(upPanel);
+        this.add(scrollPane);
+        this.add(bottomPanel);
+
+
+
+
+
+
+//        this.setLayout(new BorderLayout());
+//        this.add(upPanel, BorderLayout.NORTH);
+//        this.add(downPanel, BorderLayout.CENTER);
+//        this.add(bottomPanel, BorderLayout.SOUTH);
 
     }
     @Override
