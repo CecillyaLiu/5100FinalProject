@@ -2,6 +2,7 @@
 Yixuan Liu 2022fall
 
 How to run the application: src-main-java/com/ceciWallet/ceci-Main.java
+
 Hi! This is a small application written by Yixuan Liu. Thanks for your time to read this file.
 
 My friends often call me Ceci and thus my application name is Ceci's Wallet, designed for personal money tracking.
